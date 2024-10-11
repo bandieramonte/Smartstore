@@ -1,10 +1,9 @@
 ﻿#nullable enable
 
-using Smartstore.Core.Platform.AI.Prompting;
+using Smartstore.Core.AI.Prompting;
 using Smartstore.Engine.Modularity;
-using Smartstore.Http;
 
-namespace Smartstore.Core.Platform.AI
+namespace Smartstore.Core.AI
 {
     /// <summary>
     /// Represents an AI provider like ChatGPT.
@@ -22,18 +21,13 @@ namespace Smartstore.Core.Platform.AI
         bool Supports(AIProviderFeatures feature);
 
         /// <summary>
-        /// Gets <see cref="RouteInfo"/> for the given <paramref name="topic"/>.
-        /// </summary>
-        RouteInfo GetDialogRoute(AIChatTopic topic);
-
-        /// <summary>
-        /// Gets the names of the preferred AI models for <paramref name="topic"/>.
+        /// Gets the names of the preferred AI models for the given <paramref name="topic"/>.
         /// </summary>
         string[]? GetPreferredModelNames(AIChatTopic topic);
 
         /// <summary>
         /// Gets the default AI model names.
-        /// To be used when <see cref="GetPreferredModelNames(AIChatTopic)"/> return <c>null</c>.
+        /// To be used when <see cref="GetPreferredModelNames(AIChatTopic)"/> returns <c>null</c>.
         /// </summary>
         string[] GetDefaultModelNames();
 
