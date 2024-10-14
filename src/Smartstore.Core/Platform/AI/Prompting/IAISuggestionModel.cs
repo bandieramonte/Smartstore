@@ -1,11 +1,11 @@
 ﻿#nullable enable
 
-namespace Smartstore.Core.Platform.AI.Prompting
+namespace Smartstore.Core.AI.Prompting
 {
     /// <summary>
-    /// Interface to be implemented by all suggestion generation prompts.
+    /// Represents a text suggestion model.
     /// </summary>
-    public interface ISuggestionPrompt
+    public interface IAISuggestionModel
     {
         string TargetProperty { get; }
         string Input { get; }

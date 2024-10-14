@@ -1,9 +1,9 @@
-﻿namespace Smartstore.Core.Platform.AI.Prompting
+﻿namespace Smartstore.Core.AI.Prompting
 {
     /// <summary>
     /// Represents a text generation model with link properties.
     /// </summary>
-    public partial interface ILinkGenerationPrompt
+    public partial interface IAILinkModel
     {
         /// <summary>
         /// Gets or sets a value defining the id of the choosen language.

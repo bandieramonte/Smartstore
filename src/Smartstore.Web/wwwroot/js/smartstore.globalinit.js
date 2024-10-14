@@ -55,36 +55,31 @@ jQuery(function () {
         });
     }
 
-    // Adjust Tooltip global defaults
-    if (bootstrap?.Tooltip?.Default) {
-        bootstrap.Tooltip.Default.popperConfig = {
-            modifiers: {
-                computeStyle: { gpuAcceleration: false },
-                arrow: { element: '.arrow' },
-                flip: { enabled: false },
-            },
-            preventOverflow: {
-                boundariesElement: 'viewport'
-            }
-        };
+    // Adjust Popper global defaults
+    if (Popper?.Defaults) {
+        Popper.Defaults.modifiers.computeStyle.gpuAcceleration = false;
     }
 
     // Global notification subscriber
     if (window.EventBroker && window._ && typeof PNotify !== 'undefined') {
-        EventBroker.subscribe("message", function (message, data) {
+        EventBroker.subscribe("message", (_message, data) => {
             var opts = _.isString(data) ? { text: data } : data;
+            if (opts.text) {
+                opts.text = '<div class="ui-pnotify-text-inner">' + opts.text + '</div>';
+            }
+            
             new PNotify(opts);
         });
     }
 
     // Confirm
-    $(document).on('click', '.confirm', function (e) {
+    $(document).on('click', '.confirm', function () {
         const msg = $(this).data("confirm-message") || window.Res["Admin.Common.AskToProceed"];
         return confirm(msg);
     });
 
     // Prevent (button) multiclick
-    $(document).on('click', '.btn-prevent-multiclick', function (e) {
+    $(document).on('click', '.btn-prevent-multiclick', function () {
         let el = $(this);
         let containingForm = el.closest("form");
 
@@ -127,19 +122,20 @@ jQuery(function () {
 
     // Handle ajax notifications
     $(document)
-        .ajaxSend(function (e, xhr, opts) {
+        .ajaxSend(function (_e, _xhr, opts) {
             if (opts.data == null || opts.data == undefined) {
                 opts.data = '';
             }
         })
-        .ajaxSuccess(function (e, xhr) {
+        .ajaxSuccess(function (_e, xhr) {
             var msg = xhr.getResponseHeader('X-Message');
             if (msg) {
                 displayNotification(base64Decode(msg), xhr.getResponseHeader('X-Message-Type'));
             }
         })
-        .ajaxError(function (e, xhr) {
+        .ajaxError(function (_e, xhr) {
             var msg = xhr.getResponseHeader('X-Message');
+            console.log('KAKAKAKA', msg);
             if (msg) {
                 displayNotification(base64Decode(msg), xhr.getResponseHeader('X-Message-Type'));
             }

@@ -272,7 +272,9 @@ namespace Smartstore.Core.Data.Migrations
                 "Checkout.TermsOfService",
                 "Admin.Configuration.Settings.Order.TermsOfServiceEnabled",
                 "Admin.Configuration.Settings.Order.TermsOfServiceEnabled.Hint",
-                "Admin.Orders.OrderItem.Update.Info");
+                "Admin.Orders.OrderItem.Update.Info",
+                "Admin.ContentManagement.Topics.Validation.NoWhiteSpace",
+                "Forum.Submit");
             // ----- Quick checkout (end)
 
             builder.AddOrUpdate("Admin.Configuration.Settings.CustomerUser.MaxAvatarFileSize",
@@ -284,8 +286,6 @@ namespace Smartstore.Core.Data.Migrations
             builder.AddOrUpdate("Admin.Configuration.Settings.GeneralCommon.ShowOnPasswordRecoveryPage",
                 "Show on password recovery page",
                 "Auf der Seite zur Passwort-Wiederherstellung anzeigen");
-
-            builder.Delete("Admin.ContentManagement.Topics.Validation.NoWhiteSpace");
 
             builder.AddOrUpdate("Admin.Common.HtmlId.NoWhiteSpace",
                 "Spaces are invalid for the HTML attribute 'id'.",
@@ -500,21 +500,36 @@ namespace Smartstore.Core.Data.Migrations
                 "Specifies whether the \"NEW\" labeling is based on the available start date. By default, the creation date of the product is used.",
                 "Legt fest, ob die \"NEU\"-Kennzeichnung anhand des Datums \"Verfügbar ab\" erfolgt. Standardmäßig wird das Erstellungsdatum des Produktes verwendet.");
 
+            builder.AddOrUpdate("Admin.Customers.NoAdministratorsDeletedWarning",
+                "{0} customers are administrators. They have not been deleted for security reasons. Please delete administrators individually via the customer edit page.",
+                "Bei {0} Kunden handelt es sich um Administratoren. Aus Sicherheitsgründen wurden diese nicht gelöscht. Bitte löschen Sie Administratoren einzeln über die Kundenbearbeitungsseite.");
+
+            builder.AddOrUpdate("Admin.Customers.ReallyDeleteAdministrator",
+                "The customer is an administrator. Do you really want to delete him?",
+                "Bei dem Kunden handelt es sich um einen Administrator. Möchten Sie ihn wirklich löschen?");
+
+            builder.AddOrUpdate("Common.Done", "Done", "Erledigt");
+            builder.AddOrUpdate("Common.Failed", "Failed", "Fehlgeschlagen");
+
+            builder.AddOrUpdate("Admin.Common.LicensePlugin",
+                "To continue using this feature, please licence the plugin \"{0}\".",
+                "Bitte lizenzieren Sie das Plugin \"{0}\", um diese Funktion weiterhin nutzen zu können.");
+
             AddAIResources(builder);
         }
 
         private static void AddAIResources(LocaleResourcesBuilder builder)
         {
-            builder.AddOrUpdate("Admin.AI.CreateImageWith", "Create image with {0}", "Bild erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.CreateTextWith", "Create text with {0}", "Text erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.TranslateTextWith", "Translate with {0}", "Übersetzen mit {0}");
-            builder.AddOrUpdate("Admin.AI.MakeSuggestionWith", "Make suggestions with {0}", "Mach mir Vorschläge mit {0}");
+            builder.AddOrUpdate("Admin.AI.CreateImage", "Generate image", "Bild erzeugen");
+            builder.AddOrUpdate("Admin.AI.CreateText", "Generate text", "Text erzeugen");
+            builder.AddOrUpdate("Admin.AI.TranslateText", "Translate", "Übersetzen");
+            builder.AddOrUpdate("Admin.AI.MakeSuggestion", "Make suggestions", "Vorschläge machen");
 
-            builder.AddOrUpdate("Admin.AI.CreateShortDescWith", "Create short description with {0}", "Kurzbeschreibung erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.CreateMetaTitleWith", "Create title tag with {0}", "Title-Tag erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.CreateMetaDescWith", "Create meta description with {0}", "Meta Description erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.CreateMetaKeywordsWith", "Create meta keywords with {0}", "Meta Keywords erzeugen mit {0}");
-            builder.AddOrUpdate("Admin.AI.CreateFullDescWith", "Create full description with {0}", "Langtext erzeugen mit {0}");
+            builder.AddOrUpdate("Admin.AI.CreateShortDesc", "Generate short description", "Kurzbeschreibung erzeugen");
+            builder.AddOrUpdate("Admin.AI.CreateMetaTitle", "Generate title tag", "Title-Tag erzeugen");
+            builder.AddOrUpdate("Admin.AI.CreateMetaDesc", "Generate meta description", "Meta Description erzeugen");
+            builder.AddOrUpdate("Admin.AI.CreateMetaKeywords", "Generate meta keywords", "Meta Keywords erzeugen");
+            builder.AddOrUpdate("Admin.AI.CreateFullDesc", "Generate full description", "Langtext erzeugen");
 
             builder.AddOrUpdate("Admin.AI.TextCreation.CreateNew", "Create new", "Neu erstellen");
             builder.AddOrUpdate("Admin.AI.TextCreation.Summarize", "Summarize", "Zusammenfassen");
@@ -524,7 +539,7 @@ namespace Smartstore.Core.Data.Migrations
 
             builder.AddOrUpdate("Admin.AI.TextCreation.DefaultPrompt", "Generate text about the topic '{0}'.", "Erzeuge Text zum Thema '{0}'.");
             builder.AddOrUpdate("Admin.AI.ImageCreation.DefaultPrompt", "Generate a picture about the topic: '{0}'.", "Erzeuge ein Bild zum Thema: '{0}'.");
-            builder.AddOrUpdate("Admin.AI.Suggestions.DefaultPrompt", "Make suggestions about the topic: '{0}'.", "Mache Vorschläge zum Thema '{0}'.");
+            builder.AddOrUpdate("Admin.AI.Suggestions.DefaultPrompt", "Make a suggestion about the topic: '{0}'.", "Mache einen Vorschlag zum Thema '{0}'.");
 
             builder.AddOrUpdate("Admin.AI.MenuItemTitle.ChangeStyle", "Change style", "Sprachstil ändern");
             builder.AddOrUpdate("Admin.AI.MenuItemTitle.ChangeTone", "Change tone", "Ton ändern");
@@ -535,18 +550,12 @@ namespace Smartstore.Core.Data.Migrations
             builder.AddOrUpdate("Smartstore.AI.Prompts.DontUseMarkdown",
                 "Do not use markdown formatting.",
                 "Verwende keine Markdown-Formatierungen.");
-            builder.AddOrUpdate("Smartstore.AI.Prompts.DontNumberSuggestions",
-                "Do not number the suggestions.",
-                "Nummeriere die Vorschläge nicht.");
-            builder.AddOrUpdate("Smartstore.AI.Prompts.CharLimitSuggestions",
-                "Maximum {0} characters per suggestion.",
-                "Maximal {0} Zeichen pro Vorschlag.");
-            builder.AddOrUpdate("Smartstore.AI.Prompts.SeparateWithNumberSign",
-                "Always separate each suggestion with the # sign.",
-                "Trenne jeden Vorschlag zwingend mit dem #-Zeichen.");
+            builder.AddOrUpdate("Smartstore.AI.Prompts.DontUseLineBreaks",
+                "Do not use line breaks.",
+                "Verwende keine Zeilenumbrüche.");
             builder.AddOrUpdate("Smartstore.AI.Prompts.CharLimit",
-                "Limit your answer to {0} characters!",
-                "Begrenze deine Antwort auf {0} Zeichen!");
+                "Each answer should have a maximum of {0} characters!",
+                "Jede Antwort soll maximal {0} Zeichen haben!");
             builder.AddOrUpdate("Smartstore.AI.Prompts.WordLimit",
                 "The text may contain a maximum of {0} words.",
                 "Der Text darf maximal {0} Wörter enthalten.");
@@ -583,6 +592,9 @@ namespace Smartstore.Core.Data.Migrations
             builder.AddOrUpdate("Smartstore.AI.Prompts.NoConclusionImage",
                 "The conclusion does not receive a picture.",
                 "Das Fazit erhält kein Bild.");
+            builder.AddOrUpdate("Smartstore.AI.Prompts.DontUseTextInImages",
+                "Do not use any text or characters in the images to be created. The image should be purely visual, without any writing or labelling.",
+                "Verwende keinen Text oder Schriftzeichen in den zu erstellenden Bildern. Das Bild soll rein visuell sein, ohne jegliche Schrift oder Beschriftung.");
             builder.AddOrUpdate("Smartstore.AI.Prompts.UseKeywords",
                 "Use the following keywords: '{0}'.",
                 "Verwende folgende Keywords: '{0}'.");
@@ -663,6 +675,13 @@ namespace Smartstore.Core.Data.Migrations
             builder.AddOrUpdate("Smartstore.AI.Prompts.Role.ProductExpert",
                 "Be an expert for the product: '{0}'.",
                 "Sei ein Experte für das Produkt: '{0}'.");
+
+            builder.AddOrUpdate("Smartstore.AI.Prompts.PreserveHtmlStructure",
+                "Be sure to preserve the HTML structure.",
+                "Erhalte unbedingt die HTML-Struktur.");
+            builder.AddOrUpdate("Smartstore.AI.Prompts.ProcessHtmlElementsIndividually",
+                "Process each HTML element individually.",
+                "Betrachte dabei jedes HTML-Element einzeln.");
         }
     }
 }

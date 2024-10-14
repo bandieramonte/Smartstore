@@ -11,6 +11,8 @@ namespace Smartstore.Caching
 
         public static NullCache Instance { get; } = new NullCache();
 
+        public bool IsDistributed => false;
+
 #pragma warning disable CS0067 // The event is never used
         public event EventHandler<CacheEntryExpiredEventArgs> Expired;
 #pragma warning restore CS0067
@@ -36,10 +38,10 @@ namespace Smartstore.Caching
         public Task<T> GetAsync<T>(string key, Func<CacheEntryOptions, Task<T>> acquirer, bool independent = false, bool allowRecursion = false)
             => acquirer == null ? default : acquirer(new CacheEntryOptions());
 
-        public ISet GetHashSet(string key, Func<IEnumerable<string>> acquirer = null)
+        public ISet GetHashSet(string key, Func<IEnumerable<string>> acquirer = null, bool preserveOrder = false)
             => new MemorySet(null);
 
-        public Task<ISet> GetHashSetAsync(string key, Func<Task<IEnumerable<string>>> acquirer = null)
+        public Task<ISet> GetHashSetAsync(string key, Func<Task<IEnumerable<string>>> acquirer = null, bool preserveOrder = false)
             => Task.FromResult<ISet>(new MemorySet(null));
 
         public void Put(string key, object value, CacheEntryOptions options = null)
