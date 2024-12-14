@@ -1,9 +1,13 @@
-﻿@using Smartstore.Web.Models.Media;
+﻿@using Smartstore.Engine.Modularity;
+@using Smartstore.Web.Models.Media;
+
+@inject IModuleCatalog ModuleCatalog
 
 @model MediaGalleryModel
 
 @{
     var defaultFile = Model.Files?.ElementAtOrDefault(Model.GalleryStartIndex);
+    var hasMediaManager = ModuleCatalog.HasModule("Smartstore.MediaManager");
     bool hasVideo = Model.Files.Any(f => f.MediaType == MediaType.Video);
 }
 
@@ -73,12 +77,36 @@
                            data-thumb-image="@file.GetUrl(Model.ThumbSize)"
                            data-medium-image="@file.GetUrl(Model.ImageSize)"
                            data-picture-id="@file.Id">
-                            <img class="gal-item-content file-img"
-                                 attrs="@srcAttributes"
-                                 data-zoom="@file.GetUrl()"
-                                 alt="@file.Alt"
-                                 title="@file.TitleAttribute"
-                                 itemprop="image" />
+                            @if (file.MediaType == MediaType.Image)
+                            {
+                                <img class="gal-item-content file-img"
+                                     attrs="@srcAttributes"
+                                     data-zoom="@file.GetUrl()"
+                                     data-zoom-width="@file.Size.Width"
+                                     data-zoom-height="@file.Size.Height"
+                                     alt="@file.Alt"
+                                     title="@file.TitleAttribute"
+                                     itemprop="image" />
+                            }
+                            else if (file.MediaType == MediaType.Video && !hasMediaManager)
+                            {
+                                <figure class="file-figure gal-item-content" itemprop="video">
+                                    <picture class="file-thumb show fs-display-3" data-type="video" title="@file.TitleAttribute">
+                                        <video class="file-video" alt="@file.Alt" attrs="@srcAttributes">
+                                            <source src="@file.GetUrl()" type="video/mp4">
+                                        </video>
+                                        <img class="d-none" src="@Model.FallbackUrl" alt="@Model.DefaultAlt" />
+                                    </picture>
+                                </figure>
+                            }
+                            else
+                            {
+                                <figure class="file-figure gal-item-content">
+                                    <picture class="file-thumb show fs-display-3" data-type="video" title="@file.TitleAttribute">
+                                        <img class="file-img" attrs="@srcAttributes" alt="@file.Alt" />
+                                    </picture>
+                                </figure>
+                            }
                         </a>
                     </div>
                 }

@@ -18,11 +18,12 @@ namespace Smartstore.Web.Rendering
         /// Creates the button to open the translation dialog.
         /// </summary>
         /// <param name="model">The localized model to be translated.</param>
+        /// <param name="localizedEditorName">The unique name of the localized editor.</param>
         /// <returns>
         /// The icon button with a drop-down list to select the target property to be translated.
         /// <c>null</c> if there is no active <see cref="IAIProvider"/>.
         /// </returns>
-        TagBuilder? GenerateTranslationTool(ILocalizedModel model);
+        TagBuilder? GenerateTranslationTool(ILocalizedModel model, string localizedEditorName);
 
         /// <summary>
         /// Creates the icon button and the commands dropdown menu to open the simple text creation dialog.
@@ -73,5 +74,11 @@ namespace Smartstore.Web.Rendering
         /// <param name="enabled">A value indicating whether to initially enable the command dropdown items.</param>
         /// <returns>The HTML content.</returns>
         IHtmlContent GenerateOptimizeCommands(bool forChatDialog, bool enabled = true);
+
+        /// <summary>
+        /// Gets the URL of the dialog.
+        /// </summary>
+        /// <param name="topic">The <see cref="AIChatTopic"/> of the dialog.</param>
+        string GetDialogUrl(AIChatTopic topic);
     }
 }

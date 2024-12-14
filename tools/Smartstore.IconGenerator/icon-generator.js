@@ -99,7 +99,7 @@ class IconGenerator {
 			
 			// Retrieve svg code without the namespace.
             for (const part of symbol.children) {
-				drawCode += "\n\t\t" + part.outerHTML.replaceAll(/xmlns="http:\/\/www.w3.org\/2000\/svg"/g, '');
+				drawCode += "\n\t\t" + part.outerHTML.replaceAll(/\s+xmlns="http:\/\/www.w3.org\/2000\/svg"/g, '');
 			}
 			
             // Check if the icon already exists in the set.
@@ -149,7 +149,7 @@ class IconGenerator {
 				iconClasses += ' badge';
 			}
 			
-            allIcons += '<div class="icon' + iconClasses + '" name="' + icon.id + '"><div class="symbol">' + icon.svg + '</div><span>' + icon.id + '</span></div>';
+            allIcons += '<div class="icon' + iconClasses + '" name="' + icon.id + '"><div class="symbol">' + icon.svg + '</div><span class="icon-name">' + icon.id + '</span></div>';
 		}
 		
 		iconSetContainer.innerHTML = allIcons;

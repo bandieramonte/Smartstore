@@ -22,9 +22,10 @@ jQuery(function () {
             addclass: 'stack-bottom' + (rtl ? 'left' : 'right'),
             width: "500px",
             mobile: { swipe_dismiss: true, styling: true },
+            animate_speed: 350,
             animate: {
                 animate: true,
-                in_class: "fadeInDown",
+                in_class: "fadeInUp",
                 out_class: "fadeOut" + (rtl ? 'Left' : 'Right')
             }
         });
@@ -135,7 +136,6 @@ jQuery(function () {
         })
         .ajaxError(function (_e, xhr) {
             var msg = xhr.getResponseHeader('X-Message');
-            console.log('KAKAKAKA', msg);
             if (msg) {
                 displayNotification(base64Decode(msg), xhr.getResponseHeader('X-Message-Type'));
             }
@@ -426,11 +426,11 @@ jQuery(function () {
     (function () {
         $(document).on('click', 'a.scrollto', function (e) {
             e.preventDefault();
-            var href = $(this).attr('href');
-            var target = href === '#' ? $('body') : $(href);
-            var offset = $(this).data('offset') || 0;
+            const href = $(this).attr('href');
+            const target = href === '#' ? $('body') : $(href);
+            const offset = $(this).data('offset') || 0;
 
-            $(window).scrollTo(target, { duration: 800, offset: offset });
+            $(window).scrollTo(target, { offset: offset });
             return false;
         });
 
@@ -465,9 +465,26 @@ jQuery(function () {
         }
     });
 
+    // Fix Dropdown & Tooltip UI "collision" issues
+    $(document).on('shown.bs.dropdown hidden.bs.dropdown', '.dropdown', (e) => {
+        const tooltip = $(e.currentTarget).find('> .tooltip-toggle, > [data-toggle=tooltip]');
+        if (tooltip.data('bs.tooltip')) {
+            if (e.type === 'shown') {
+                // Hide tooltip if dropdown is shown...
+                tooltip.tooltip('hide');
+                // and disable it.
+                tooltip.tooltip('disable');
+            }
+            else {
+                // Re-enable tooltip if dropdown is hidden.
+                tooltip.tooltip('enable');
+            }
+        }
+    });
+
     // Modal stuff
-    $(document).on('hide.bs.modal', '.modal', function (e) { body.addClass('modal-hiding'); });
-    $(document).on('hidden.bs.modal', '.modal', function (e) { body.removeClass('modal-hiding'); });
+    $(document).on('hide.bs.modal', '.modal', () => { body.addClass('modal-hiding'); });
+    $(document).on('hidden.bs.modal', '.modal', () => { body.removeClass('modal-hiding'); });
 
     // Bootstrap Tooltip & Popover custom classes
     // TODO: Remove customization after BS4 has been updated to latest version or to BS5

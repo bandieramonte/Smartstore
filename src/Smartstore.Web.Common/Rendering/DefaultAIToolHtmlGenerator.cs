@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Smartstore.ComponentModel;
-using Smartstore.Core.Localization;
 using Smartstore.Core.AI;
+using Smartstore.Core.Localization;
+using Smartstore.Core.Seo;
 using Smartstore.Web.Modelling;
 
 namespace Smartstore.Web.Rendering
@@ -43,7 +44,7 @@ namespace Smartstore.Web.Rendering
             get
             {
                 CheckContextualized();
-                
+
                 if (_htmlHelper == null)
                 {
                     _htmlHelper = _viewContext.HttpContext.GetServiceScope().Resolve<IHtmlHelper>();
@@ -57,7 +58,7 @@ namespace Smartstore.Web.Rendering
             }
         }
 
-        public virtual TagBuilder GenerateTranslationTool(ILocalizedModel model)
+        public virtual TagBuilder GenerateTranslationTool(ILocalizedModel model, string localizedEditorName)
         {
             Guard.NotNull(model);
 
@@ -76,10 +77,18 @@ namespace Smartstore.Web.Rendering
                 return null;
             }
 
+            var entityId = 0;
             // Entity model must not be transient
-            if (model is EntityModelBase entityModel && entityModel.EntityId == 0)
+            if (model is EntityModelBase entityModel && (entityId = entityModel.EntityId) == 0)
             {
                 return null;
+            }
+
+            if (entityId == 0)
+            {
+                // We are in the context of an entity which is not EntityModelBase and therefore has no ID, e.g. PageBuilder.
+                // Lets look in the route data for an ID.
+                _viewContext.RouteData.Values.TryGetAndConvertValue("id", out entityId);
             }
 
             var localesProperty = modelType.GetProperty("Locales", BindingFlags.Public | BindingFlags.Instance);
@@ -111,10 +120,13 @@ namespace Smartstore.Web.Rendering
 
             string[] additionalItemClasses = ["ai-translator"];
             var dialogUrl = GetDialogUrl(AIChatTopic.Translation);
-            var inputGroupColDiv = CreateDialogOpener(true);
+            var inputGroupColDiv = CreateDialogOpener(true, title: GetOpenerTitle(AIChatTopic.Translation));
 
             var dropdownUl = new TagBuilder("ul");
             dropdownUl.Attributes["class"] = "dropdown-menu dropdown-menu-right ai-translator-menu";
+
+            var entityType = model.GetEntityType();
+            var entityTypeName = entityType == null ? string.Empty : NamedEntity.GetEntityName(entityType);
 
             // INFO: we often have several localized editors per ILocalizedLocaleModel (e.g. "blogpost-info-localized" and "blogpost-seo-localized")
             // but we only want to have the properties in the translator menu that can also be edited in the associated localized editor.
@@ -133,6 +145,16 @@ namespace Smartstore.Web.Rendering
                 attrs["data-modal-url"] = dialogUrl;
                 attrs["data-modal-title"] = displayName;
                 attrs["data-target-property"] = id;
+                // For the translation dialog we use a different approach of determining the target field.
+                // The target property name is used to find the correct property in the localized editor.
+                attrs["data-target-property-name"] = name;
+                attrs["data-localized-editor-name"] = localizedEditorName;
+
+                if (entityTypeName.HasValue())
+                {
+                    attrs["data-entity-id"] = entityId.ToString();
+                    attrs["data-entity-type"] = entityTypeName;
+                }
 
                 // INFO: there is no explicit item order. To put the menu items in the same order as the HTML elements,
                 // the properties of the ILocalizedLocaleModel must be ordered accordingly.
@@ -147,9 +169,9 @@ namespace Smartstore.Web.Rendering
         public virtual TagBuilder GenerateTextCreationTool(AttributeDictionary attributes, bool enabled = true)
             => GenerateTextToolOutput(attributes, AIChatTopic.Text, enabled);
 
-        public virtual TagBuilder GenerateRichTextTool(AttributeDictionary attributes, bool enabled = true)    
+        public virtual TagBuilder GenerateRichTextTool(AttributeDictionary attributes, bool enabled = true)
             => GenerateTextToolOutput(attributes, AIChatTopic.RichText, enabled);
-    
+
         protected virtual TagBuilder GenerateTextToolOutput(AttributeDictionary attributes, AIChatTopic topic, bool enabled = true)
         {
             CheckContextualized();
@@ -160,7 +182,7 @@ namespace Smartstore.Web.Rendering
                 return null;
             }
 
-            var inputGroupColDiv = CreateDialogOpener(true);
+            var inputGroupColDiv = CreateDialogOpener(true, title: GetOpenerTitle(AIChatTopic.Text));
             inputGroupColDiv.Attributes["data-modal-url"] = GetDialogUrl(topic);
             inputGroupColDiv.MergeAttributes(attributes);
 
@@ -180,21 +202,21 @@ namespace Smartstore.Web.Rendering
             var resRoot = "Admin.AI.TextCreation.";
 
             builder.AppendHtml(CreateDropdownItem(T($"{resRoot}CreateNew"), true, "create-new", "repeat", false, className));
-            builder.AppendHtml("<div class=\"dropdown-divider\"></div>");
+            builder.AppendHtml("<li class=\"dropdown-divider\"></li>");
 
             // Add "Change style" & "Change tone" options from module settings.
-            var styleDropdown = AddMenuItemsFromSetting(enabled, "change-style", className);
-            var toneDropdown = AddMenuItemsFromSetting(enabled, "change-tone", className);
+            var styleDropdown = AddMenuItemsFromSetting(enabled, "change-style", className, "vector-pen");
+            var toneDropdown = AddMenuItemsFromSetting(enabled, "change-tone", className, "emoji-wink");
 
             if (styleDropdown != null || toneDropdown != null)
             {
                 builder.AppendHtml(styleDropdown);
                 builder.AppendHtml(toneDropdown);
-                builder.AppendHtml("<div class=\"dropdown-divider\"></div>");
+                builder.AppendHtml("<li class=\"dropdown-divider\"></li>");
             }
 
             builder.AppendHtml(CreateDropdownItem(T($"{resRoot}Summarize"), enabled, "summarize", "highlighter", false, className));
-            builder.AppendHtml(CreateDropdownItem(T($"{resRoot}Improve"), enabled, "improve", "suitcase-lg", false, className));
+            builder.AppendHtml(CreateDropdownItem(T($"{resRoot}Improve"), enabled, "improve", "lightbulb", false, className));
             builder.AppendHtml(CreateDropdownItem(T($"{resRoot}Simplify"), enabled, "simplify", "text-left", false, className));
             builder.AppendHtml(CreateDropdownItem(T($"{resRoot}Extend"), enabled, "extend", "body-text", false, className));
 
@@ -228,14 +250,19 @@ namespace Smartstore.Web.Rendering
             }
 
             var optionsList = new TagBuilder("ul");
-            optionsList.Attributes["class"] = "dropdown-menu dropdown-menu-right";
+            optionsList.Attributes["class"] = "dropdown-menu dropdown-menu-slide dropdown-menu-right";
 
             foreach (var option in options)
             {
-                optionsList.InnerHtml.AppendHtml(CreateDropdownItem(option, enabled, command, iconName, false, additionalClasses));
+                optionsList.InnerHtml.AppendHtml(CreateDropdownItem(option, enabled, command, null, false, additionalClasses));
             }
 
-            var subDropdown = CreateDropdownItem(T(command == "change-style" ? "Admin.AI.MenuItemTitle.ChangeStyle" : "Admin.AI.MenuItemTitle.ChangeTone"));
+            var subDropdown = CreateDropdownItem(
+                T(command == "change-style" ? "Admin.AI.MenuItemTitle.ChangeStyle" : "Admin.AI.MenuItemTitle.ChangeTone"),
+                true,
+                string.Empty,
+                iconName,
+                false);
             subDropdown.Attributes["class"] = "dropdown-group";
             subDropdown.InnerHtml.AppendHtml(optionsList);
 
@@ -251,7 +278,7 @@ namespace Smartstore.Web.Rendering
         /// <summary>
         /// Generates the output for the AI dialog openers.
         /// </summary>
-        /// <param name="attributes">The attributes of the taghelper.</param>
+        /// <param name="attributes">The attributes of the TagHelper.</param>
         /// <param name="feature">The <see cref="AIProviderFeatures"/> to be supported for the AI tool.</param>
         /// <param name="topic">The <see cref="AIChatTopic"/> of the AI tool.</param>
         /// <returns>
@@ -267,30 +294,7 @@ namespace Smartstore.Web.Rendering
                 return null;
             }
 
-            var additionalClasses = GetDialogIdentifierClass(topic);
-            var dropdownLiTitle = string.Empty;
-
-            switch (topic)
-            {
-                // INFO: Text, RichText and Translation are not handled here. Clean up???
-                //case AIChatTopic.Text:
-                //case AIChatTopic.RichText:
-                //    dropdownLiTitle = T("Admin.AI.CreateText");
-                //    break;
-                //case AIChatTopic.Translation:
-                //    dropdownLiTitle = T("Admin.AI.TranslateText");
-                //    break;
-                case AIChatTopic.Image:
-                    dropdownLiTitle = T("Admin.AI.CreateImage");
-                    break;
-                case AIChatTopic.Suggestion:
-                    dropdownLiTitle = T("Admin.AI.MakeSuggestion");
-                    break;
-                default:
-                    throw new AIException($"Unknown chat topic {topic}.");
-            }
-
-            var openerDiv = CreateDialogOpener(false, additionalClasses, dropdownLiTitle);
+            var openerDiv = CreateDialogOpener(false, GetDialogIdentifierClass(topic), GetOpenerTitle(topic));
             openerDiv.Attributes["data-modal-url"] = GetDialogUrl(topic);
             openerDiv.MergeAttributes(attributes);
 
@@ -330,23 +334,20 @@ namespace Smartstore.Web.Rendering
         /// <returns>The dialog opener icon.</returns>
         protected virtual TagBuilder GenerateOpenerIcon(bool isDropdown, string additionalClasses = "", string title = "")
         {
-            var icon = (TagBuilder)HtmlHelper.BootstrapIcon("magic", htmlAttributes: new Dictionary<string, object>
+            var icon = (TagBuilder)HtmlHelper.BootstrapIcon("stars-tricolor", htmlAttributes: new Dictionary<string, object>
             {
-                ["class"] = "dropdown-icon bi-fw bi"
+                ["class"] = "dropdown-icon ai-icon-stars-tricolor bi-fw bi"
             });
 
             var btnTag = new TagBuilder("a");
             btnTag.Attributes["href"] = "javascript:;";
-            btnTag.Attributes["class"] = "btn btn-clear-dark btn-no-border btn-sm btn-icon rounded-circle input-group-icon ai-dialog-opener no-chevron";
+            btnTag.Attributes["class"] = "btn btn-clear-dark btn-no-border btn-sm btn-icon rounded-circle input-group-icon ai-dialog-opener no-chevron tooltip-toggle";
+            btnTag.Attributes["data-original-title"] = title;
             btnTag.AppendCssClass(isDropdown ? "dropdown-toggle" : additionalClasses);
 
             if (isDropdown)
             {
                 btnTag.Attributes["data-toggle"] = "dropdown";
-            }
-            else
-            {
-                btnTag.Attributes["title"] = title;
             }
 
             btnTag.InnerHtml.AppendHtml(icon);
@@ -354,11 +355,8 @@ namespace Smartstore.Web.Rendering
             return btnTag;
         }
 
-        /// <summary>
-        /// Gets the URL of the dialog.
-        /// </summary>
-        /// <param name="topic">The <see cref="AIChatTopic"/> of the dialog.</param>
-        protected virtual string GetDialogUrl(AIChatTopic topic)
+        /// <inheritdoc/>
+        public virtual string GetDialogUrl(AIChatTopic topic)
         {
             var action = topic switch
             {
@@ -389,6 +387,27 @@ namespace Smartstore.Web.Rendering
                     return "ai-translator";
                 case AIChatTopic.Suggestion:
                     return "ai-suggestion";
+                default:
+                    throw new AIException($"Unknown chat topic {topic}.");
+            }
+        }
+
+        /// <summary>
+        /// Gets the title of the dialog opener element.
+        /// </summary>
+        private string GetOpenerTitle(AIChatTopic topic)
+        {
+            switch (topic)
+            {
+                case AIChatTopic.Text:
+                case AIChatTopic.RichText:
+                    return T("Admin.AI.ToolTitle.CreateText");
+                case AIChatTopic.Translation:
+                    return T("Admin.AI.ToolTitle.TranslateText");
+                case AIChatTopic.Image:
+                    return T("Admin.AI.ToolTitle.CreateImage");
+                case AIChatTopic.Suggestion:
+                    return T("Admin.AI.ToolTitle.MakeSuggestions");
                 default:
                     throw new AIException($"Unknown chat topic {topic}.");
             }
